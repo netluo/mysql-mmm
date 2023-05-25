@@ -458,14 +458,32 @@ sub set_active_master($) {
 	# Get replication credentials
 	my ($repl_user, $repl_password) = _get_replication_credentials($new_peer);
 
+	# Get gtid mode
+	my $gtid_status = $new_peer_dbh->selectrow_hashref('SELECT @@GLOBAL.gtid_mode');
+	my $gtid_mode = $gtid_status->{Value};
+
 	# Change master
+	# my $sql = 'CHANGE MASTER TO'
+	# 		  . " MASTER_HOST='$new_peer_host',"
+	# 		  . " MASTER_PORT=$new_peer_port,"
+	# 		  . " MASTER_USER='$repl_user',"
+	# 		  . " MASTER_PASSWORD='$repl_password',"
+	# 		  . " MASTER_LOG_FILE='$new_peer_log',"
+	# 		  . " MASTER_LOG_POS=$new_peer_pos";
+	# Build SQL statement based on gtid mode
 	my $sql = 'CHANGE MASTER TO'
 			  . " MASTER_HOST='$new_peer_host',"
 			  . " MASTER_PORT=$new_peer_port,"
 			  . " MASTER_USER='$repl_user',"
-			  . " MASTER_PASSWORD='$repl_password',"
-			  . " MASTER_LOG_FILE='$new_peer_log',"
-			  . " MASTER_LOG_POS=$new_peer_pos";
+			  . " MASTER_PASSWORD='$repl_password',";
+
+	if ($gtid_mode eq 'ON') {
+		$sql .= ' MASTER_AUTO_POSITION=1';
+	} else {
+		$sql .= " MASTER_LOG_FILE='$new_peer_log',"
+				. " MASTER_LOG_POS=$new_peer_pos";
+	}
+
 	$res = $this_dbh->do($sql);
 	_exit_error('SQL Query Error: ' . $this_dbh->errstr) unless($res);
 
