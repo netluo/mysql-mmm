@@ -459,18 +459,9 @@ sub set_active_master($) {
 	my ($repl_user, $repl_password) = _get_replication_credentials($new_peer);
 
 	# Get gtid mode
-	my $gtid_status = $new_peer_dbh->selectrow_hashref('SELECT @@GLOBAL.gtid_mode');
-	my $gtid_mode = $gtid_status->{Value};
+	my $gtid_mode = $this_dbh->selectrow_array('SELECT @@GLOBAL.gtid_mode');
 
 	# Change master
-	# my $sql = 'CHANGE MASTER TO'
-	# 		  . " MASTER_HOST='$new_peer_host',"
-	# 		  . " MASTER_PORT=$new_peer_port,"
-	# 		  . " MASTER_USER='$repl_user',"
-	# 		  . " MASTER_PASSWORD='$repl_password',"
-	# 		  . " MASTER_LOG_FILE='$new_peer_log',"
-	# 		  . " MASTER_LOG_POS=$new_peer_pos";
-	# Build SQL statement based on gtid mode
 	my $sql = 'CHANGE MASTER TO'
 			  . " MASTER_HOST='$new_peer_host',"
 			  . " MASTER_PORT=$new_peer_port,"
